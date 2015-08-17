@@ -360,7 +360,7 @@ public class SandboxMediator extends SimpleMediator<Sandbox> {
 
             // setting key and scroll focus on main area
             sandbox.getUIStage().setKeyboardFocus();
-            sandbox.getUIStage().setScrollFocus(sandbox.getUIStage().sandBoxUIGroup);
+            sandbox.getUIStage().setScrollFocus(sandbox.getUIStage().midUI);
             sandbox.setKeyboardFocus();
 
             // if there was a drop down remove it
@@ -427,6 +427,15 @@ public class SandboxMediator extends SimpleMediator<Sandbox> {
             // well, duh
             if (amount == 0) return false;
 
+            // Control pressed as well
+            if (isControlPressed()) {
+                float zoomPercent = sandbox.getZoomPercent();
+                zoomPercent-=amount*4f;
+                if(zoomPercent < 5 ) zoomPercent = 5;
+                sandbox.setZoomPercent(zoomPercent);
+
+                facade.sendNotification(Overlap2D.ZOOM_CHANGED);
+            }
             // if item is currently being held with mouse (touched in but not touched out)
             // mouse scroll should rotate the selection around it's origin
             /*

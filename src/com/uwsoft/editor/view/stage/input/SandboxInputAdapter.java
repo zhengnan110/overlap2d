@@ -7,12 +7,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.uwsoft.editor.renderer.components.*;
+import com.uwsoft.editor.renderer.data.LayerItemVO;
+import com.uwsoft.editor.utils.runtime.EntityUtils;
 import com.uwsoft.editor.view.stage.Sandbox;
 import com.uwsoft.editor.Overlap2DFacade;
 import com.uwsoft.editor.view.stage.SandboxMediator;
-import com.uwsoft.editor.renderer.components.DimensionsComponent;
-import com.uwsoft.editor.renderer.components.NodeComponent;
-import com.uwsoft.editor.renderer.components.ViewPortComponent;
 import com.uwsoft.editor.renderer.utils.TransformMathUtils;
 import com.uwsoft.editor.renderer.utils.ComponentRetriever;
 
@@ -78,7 +78,7 @@ public class SandboxInputAdapter implements InputProcessor {
 		hitTargetLocalCoordinates.set(screenX, screenY);
 		screenToSceneCoordinates(rootEntity, hitTargetLocalCoordinates);
 		
-		System.out.println("SCREEN TO STAGE X="+ hitTargetLocalCoordinates.x +" Y=" + hitTargetLocalCoordinates.y);
+		//System.out.println("SCREEN TO STAGE X="+ hitTargetLocalCoordinates.x +" Y=" + hitTargetLocalCoordinates.y);
 		
 		target = hit(rootEntity, hitTargetLocalCoordinates.x, hitTargetLocalCoordinates.y);
 		if(target == null){ 
@@ -215,7 +215,7 @@ public class SandboxInputAdapter implements InputProcessor {
 		Vector2 localCoordinates  = new Vector2(x, y); 
 		
 		TransformMathUtils.parentToLocalCoordinates(root, localCoordinates);
-				
+
 		DimensionsComponent dimentionsComponent;
 		NodeComponent nodeComponent = ComponentRetriever.get(root, NodeComponent.class);
 		SnapshotArray<Entity> childrenEntities = nodeComponent.children;
@@ -225,11 +225,13 @@ public class SandboxInputAdapter implements InputProcessor {
 		for (int i = n; i >= 0; i--){
 			Entity childEntity = childrenEntities.get(i);
 			childLocalCoordinates.set(localCoordinates);
-//			NodeComponent childNodeComponent = ComponentRetriever.get(childEntity, NodeComponent.class);
-//			if(childNodeComponent != null){
-//				return hit(childEntity, childLocalCoordinates.x, childLocalCoordinates.y);
-//			}
-			
+
+			// get layer locked or not
+			LayerItemVO layerItemVO = EntityUtils.getEntityLayer(childEntity);
+			if(layerItemVO != null && layerItemVO.isLocked) {
+				continue;
+			}
+
 			TransformMathUtils.parentToLocalCoordinates(childEntity, childLocalCoordinates);
 			
 			dimentionsComponent = ComponentRetriever.get(childEntity, DimensionsComponent.class);

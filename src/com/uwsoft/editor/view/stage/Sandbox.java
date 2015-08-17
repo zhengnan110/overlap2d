@@ -28,8 +28,10 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.overlap2d.extensions.spine.SpineItemType;
 import com.uwsoft.editor.Overlap2D;
 import com.uwsoft.editor.data.vo.ProjectVO;
+import com.uwsoft.editor.data.vo.SceneConfigVO;
 import com.uwsoft.editor.view.ui.widget.actors.basic.PixelRect;
 import com.uwsoft.editor.view.ItemControlMediator;
 import com.uwsoft.editor.view.SceneControlMediator;
@@ -44,7 +46,10 @@ import com.uwsoft.editor.renderer.data.CompositeItemVO;
 import com.uwsoft.editor.renderer.data.CompositeVO;
 import com.uwsoft.editor.renderer.data.LayerItemVO;
 import com.uwsoft.editor.renderer.data.SceneVO;
+import com.uwsoft.editor.renderer.systems.PhysicsSystem;
+import com.uwsoft.editor.renderer.systems.render.Overlap2dRenderer;
 import com.uwsoft.editor.renderer.utils.ComponentRetriever;
+import com.uwsoft.editor.system.PhysicsAdjustSystem;
 
 import java.util.HashMap;
 
@@ -70,6 +75,9 @@ public class Sandbox {
     public static final String ACTION_DELETE = CLASS_NAME + "ACTION_DELETE";
     public static final String ACTION_CREATE_ITEM = CLASS_NAME + "ACTION_CREATE_ITEM";
 
+    public static final String ACTION_DELETE_LAYER = CLASS_NAME + "ACTION_DELETE_LAYER";
+    public static final String ACTION_NEW_LAYER = CLASS_NAME + "ACTION_NEW_LAYER";
+
     public static final String ACTION_ADD_COMPONENT = CLASS_NAME + "ACTION_ADD_COMPONENT";
     public static final String ACTION_REMOVE_COMPONENT = CLASS_NAME + "ACTION_REMOVE_COMPONENT";
 
@@ -78,6 +86,7 @@ public class Sandbox {
     public static final String ACTION_EDIT_PHYSICS = CLASS_NAME + "ACTION_EDIT_PHYSICS";
     public static final String ACTION_SET_GRID_SIZE_FROM_ITEM = CLASS_NAME + "ACTION_SET_GRID_SIZE_FROM_ITEM";
     public static final String ACTION_ITEMS_MOVE_TO = CLASS_NAME + "ACTION_ITEMS_MOVE_TO";
+    public static final String ACTION_ITEM_TRANSFORM_TO = CLASS_NAME + "ACTION_ITEM_TRANSFORM_TO";
 
     public static final String ACTION_SET_SELECTION = CLASS_NAME + "ACTION_SET_SELECTION";
     public static final String ACTION_ADD_SELECTION = CLASS_NAME + "ACTION_ADD_SELECTION";
@@ -157,6 +166,14 @@ public class Sandbox {
         uiStage = uiStageMediator.getViewComponent();
 
 		sceneLoader = new SceneLoader(resourceManager);
+        // adding spine as external component
+        sceneLoader.injectExternalItemType(new SpineItemType());
+        
+        //Remove Physics System and add Adjusting System for box2d objects to follow items and stop world tick
+        sceneLoader.engine.removeSystem(sceneLoader.engine.getSystem(PhysicsSystem.class));
+        sceneLoader.engine.addSystem(new PhysicsAdjustSystem(sceneLoader.world));
+        sceneLoader.engine.getSystem(Overlap2dRenderer.class).setPhysicsOn(false);
+        
         sceneControl = new SceneControlMediator(sceneLoader);
         itemControl = new ItemControlMediator(sceneControl);
 
@@ -171,7 +188,7 @@ public class Sandbox {
         selectionRec.setFillColor(new Color(1, 1, 1, 0.1f));
         selectionRec.setOpacity(0.0f);
         selectionRec.setTouchable(Touchable.disabled);
-        uiStage.sandBoxUIGroup.addActor(selectionRec);
+        uiStage.midUI.addActor(selectionRec);
 
     }
     
@@ -180,7 +197,7 @@ public class Sandbox {
     }
 
     public void setKeyboardFocus() {
-        uiStage.setKeyboardFocus(uiStage.sandBoxUIGroup);
+        uiStage.setKeyboardFocus(uiStage.midUI);
     }
     
 
@@ -243,6 +260,10 @@ public class Sandbox {
         //TODO: move this into SceneDataManager!
         SceneDataManager sceneDataManager = facade.retrieveProxy(SceneDataManager.NAME);
         sceneDataManager.sendNotification(SceneDataManager.SCENE_LOADED);
+
+        ProjectManager projectManager = Overlap2DFacade.getInstance().retrieveProxy(ProjectManager.NAME);
+        SceneConfigVO sceneConfigVO = projectManager.getCurrentSceneConfigVO();
+        getCamera().position.set(sceneConfigVO.cameraPosition[0], sceneConfigVO.cameraPosition[1], 0);
     }
 
     public void initSceneView(CompositeItemVO compositeItemVO) {

@@ -21,6 +21,8 @@ package com.uwsoft.editor.data.vo;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter.OutputType;
 
+import java.util.ArrayList;
+
 public class ProjectVO {
 
     public String projectName = "";
@@ -29,15 +31,13 @@ public class ProjectVO {
 
     public String projectMainExportPath = "";
 
-    public String projectSceneExportPath = "";
-    public String projectAtlasExportPath = "";
-    public String projectEffectsExportPath = "";
-    public String projectSpineExportPath = "";
-    public String projectFontsExportPath = "";
     public String lastOpenScene = "";
     public String lastOpenResolution = "";    
     public String texturepackerWidth	=	"4096";
     public String texturepackerHeight  =	"4096";
+
+    public ArrayList<SceneConfigVO> sceneConfigs = new ArrayList<>();
+
 
     public String constructJsonString() {
         String str = "";

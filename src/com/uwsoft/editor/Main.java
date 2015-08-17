@@ -25,14 +25,17 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.dnd.DropTarget;
 import java.awt.event.InputEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
+import com.uwsoft.editor.view.frame.FileDropListener;
 import org.apache.commons.lang3.SystemUtils;
 
 import com.badlogic.gdx.backends.jglfw.JglfwApplication;
@@ -54,7 +57,7 @@ public class Main {
 
     private void startLoadingEditor() {
         //first, kill off the splash
-    	if (!(SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_MAC)) {
+    	if (!(SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_MAC || SystemUtils.IS_OS_UNIX)) {
     		splash.kill();
     	}
 
@@ -62,7 +65,7 @@ public class Main {
         Rectangle maximumWindowBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         double width = maximumWindowBounds.getWidth();
         double height = maximumWindowBounds.getHeight();
-        
+
         if (SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_MAC) {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Overlap2D");
@@ -83,23 +86,46 @@ public class Main {
             mainFrame = new LwjglFrame(overlap2D, config);
             mainFrame.setExtendedState(mainFrame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
             toggleVisible();
+
+            // subscribe to file dropping notifications, currently windows only
+            DropTarget dropTarget = new DropTarget(mainFrame, new FileDropListener());
         }
-        
-        setIcon();
+
+        if(!SystemUtils.IS_OS_UNIX) {
+            // no aesthetics for linux users I guess..
+            setIcon();
+        }
 
     }
 
-    public static void main(String[] argv) throws Exception {
-        String input = "../art/textures";
+    public static String getLocalArtPath(String directoryName) {
+        // TODO: wtf with all the multiplatform shit? anyone had experience?
+        URL inputUrl = Main.class.getClassLoader().getResource("art/"+directoryName);
+        String input;
+        if(inputUrl != null) {
+            input = inputUrl.getPath();
+        } else {
+            inputUrl = Main.class.getClassLoader().getResource(directoryName);
+            if(inputUrl != null) {
+                input = inputUrl.getPath();
+            } else {
+                input = "../art/"+directoryName;
+            }
+        }
         File file = new File(input);
         if(!file.exists()){
-        	 input = "art/textures";
-             file = new File(input);
+            input = "art/"+directoryName;
         }
+
+        return input;
+    }
+
+    public static void main(String[] argv) throws Exception {
         /**
          * this should not be happening when in release mode
          */
-        /*
+         /**
+        String input = getLocalArtPath("textures");
         String output = "style";
         String packFileName = "uiskin";
         TexturePacker.Settings settings =  new TexturePacker.Settings();
@@ -107,18 +133,14 @@ public class Main {
         TexturePacker.processIfModified(input, output, packFileName);
         processSplashScreenTextures();
         */
+
         new Main();
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     }
 
     private static void processSplashScreenTextures() {
-        String input = "../art/splash_textures";
-        File file = new File(input);
-        if(!file.exists()){
-        	 input = "art/splash_textures";
-             file = new File(input);
-        }
-        
+        String input = getLocalArtPath("splash_textures");
+
         String output = "splash";
         String packFileName = "splash";
         TexturePacker.Settings settings =  new TexturePacker.Settings();
@@ -152,22 +174,22 @@ public class Main {
             }
         }
     }
-    
+
     //THIS IS JUST FOR FUN
     private void setIcon(){
-    	String logoPath = "../art/splash_textures/";
+    	String logoPath = getLocalArtPath("splash_textures");
         File file = new File(logoPath);
         if(!file.exists()){
         	 logoPath = "art/splash_textures/";
              file = new File(logoPath);
         }
         logoPath+="icon.png";
-    	
+
     	if(mainFrame != null){
     		mainFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(logoPath));
     		return;
     	}
-    	
+
     	 try {
              Class util = Class.forName("com.apple.eawt.Application");
              Method getApplication = util.getMethod("getApplication", new Class[0]);

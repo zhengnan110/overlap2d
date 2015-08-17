@@ -19,6 +19,7 @@
 package com.uwsoft.editor.view.ui.properties.panels;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.badlogic.gdx.utils.reflect.ClassReflection;
@@ -26,7 +27,7 @@ import com.badlogic.gdx.utils.reflect.ReflectionException;
 import com.uwsoft.editor.controller.commands.AddComponentToItemCommand;
 import com.uwsoft.editor.controller.commands.AddToLibraryCommand;
 import com.uwsoft.editor.renderer.components.*;
-import com.uwsoft.editor.renderer.components.physics.PhysicsBodyPropertiesComponent;
+import com.uwsoft.editor.renderer.components.physics.PhysicsBodyComponent;
 import com.uwsoft.editor.utils.runtime.EntityUtils;
 import com.uwsoft.editor.view.ui.widget.components.color.ColorPickerAdapter;
 import com.uwsoft.editor.view.ui.widget.components.color.CustomColorPicker;
@@ -78,7 +79,7 @@ public class UIBasicItemPropertiesMediator extends UIItemPropertiesMediator<Enti
         itemTypeMap.put("ENTITY_"+EntityFactory.NINE_PATCH, UIBasicItemProperties.ItemType.patchImage);
 
         componentClassMap.put("Polygon Component", PolygonComponent.class);
-        componentClassMap.put("Physics Component", PhysicsBodyPropertiesComponent.class);
+        componentClassMap.put("Physics Component", PhysicsBodyComponent.class);
     }
 
     @Override
@@ -152,13 +153,13 @@ public class UIBasicItemPropertiesMediator extends UIItemPropertiesMediator<Enti
             }
         }
 
-        viewComponent.setItemType(itemTypeMap.get("ENTITY_" + EntityUtils.getType(entity)));
+        viewComponent.setItemType(itemTypeMap.get("ENTITY_" + EntityUtils.getType(entity)), mainItemComponent.uniqueId);
         viewComponent.setIdBoxValue(mainItemComponent.itemIdentifier);
-        viewComponent.setXValue(String.format("%.2f", transformComponent.x));
-        viewComponent.setYValue(String.format("%.2f", transformComponent.y));
+        viewComponent.setXValue(String.format(Locale.ENGLISH, "%.2f", transformComponent.x));
+        viewComponent.setYValue(String.format(Locale.ENGLISH, "%.2f", transformComponent.y));
 
-        viewComponent.setWidthValue(String.format("%.2f", dimensionComponent.width));
-        viewComponent.setHeightValue(String.format("%.2f", dimensionComponent.height));
+        viewComponent.setWidthValue(String.format(Locale.ENGLISH, "%.2f", dimensionComponent.width));
+        viewComponent.setHeightValue(String.format(Locale.ENGLISH, "%.2f", dimensionComponent.height));
         viewComponent.setRotationValue(transformComponent.rotation + "");
         viewComponent.setScaleXValue(transformComponent.scaleX + "");
         viewComponent.setScaleYValue(transformComponent.scaleY + "");
@@ -180,8 +181,7 @@ public class UIBasicItemPropertiesMediator extends UIItemPropertiesMediator<Enti
 
     @Override
     protected void translateViewToItemData() {
-        //MainItemVO vo = observableReference.getDataVO();
-    	Entity entity  = ((Entity) observableReference);
+    	Entity entity  = observableReference;
 
         transformComponent = ComponentCloner.get(ComponentRetriever.get(entity, TransformComponent.class));
         mainItemComponent = ComponentCloner.get(ComponentRetriever.get(entity, MainItemComponent.class));

@@ -54,3 +54,10 @@ gradle/
 .DS_Store
 /local
 /bin/
+
+overlap2d-runtime-libgdx
+spine-runtimes
+
+assets/style/uiskin.png
+assets/style/uiskin.atlas
+/runOverlap2d_dev.bat
