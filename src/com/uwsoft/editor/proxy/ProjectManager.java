@@ -18,6 +18,36 @@
 
 package com.uwsoft.editor.proxy;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.tools.texturepacker.TexturePacker;
+import com.badlogic.gdx.tools.texturepacker.TexturePacker.Settings;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Json;
+import com.kotcrab.vis.ui.util.dialog.DialogUtils;
+import com.puremvc.patterns.proxy.BaseProxy;
+import com.uwsoft.editor.Overlap2DFacade;
+import com.uwsoft.editor.data.manager.PreferencesManager;
+import com.uwsoft.editor.data.migrations.ProjectVersionMigrator;
+import com.uwsoft.editor.data.vo.EditorConfigVO;
+import com.uwsoft.editor.data.vo.ProjectVO;
+import com.uwsoft.editor.data.vo.SceneConfigVO;
+import com.uwsoft.editor.renderer.data.CompositeItemVO;
+import com.uwsoft.editor.renderer.data.MainItemVO;
+import com.uwsoft.editor.renderer.data.ProjectInfoVO;
+import com.uwsoft.editor.renderer.data.ResolutionEntryVO;
+import com.uwsoft.editor.renderer.data.SceneVO;
+import com.uwsoft.editor.renderer.utils.MySkin;
+import com.uwsoft.editor.utils.Overlap2DUtils;
+import com.uwsoft.editor.view.menu.Overlap2DMenuBar;
+import com.uwsoft.editor.view.stage.Sandbox;
+import com.uwsoft.editor.view.ui.widget.ProgressHandler;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,37 +62,6 @@ import javax.imageio.ImageIO;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import com.uwsoft.editor.data.manager.PreferencesManager;
-import com.uwsoft.editor.data.vo.SceneConfigVO;
-import com.uwsoft.editor.view.menu.Overlap2DMenuBar;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.tools.texturepacker.TexturePacker;
-import com.badlogic.gdx.tools.texturepacker.TexturePacker.Settings;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Json;
-import com.kotcrab.vis.ui.util.dialog.DialogUtils;
-import com.puremvc.patterns.proxy.BaseProxy;
-import com.uwsoft.editor.data.migrations.ProjectVersionMigrator;
-import com.uwsoft.editor.data.vo.EditorConfigVO;
-import com.uwsoft.editor.data.vo.ProjectVO;
-import com.uwsoft.editor.view.stage.Sandbox;
-import com.uwsoft.editor.view.ui.widget.ProgressHandler;
-import com.uwsoft.editor.Overlap2DFacade;
-import com.uwsoft.editor.renderer.data.CompositeItemVO;
-import com.uwsoft.editor.renderer.data.MainItemVO;
-import com.uwsoft.editor.renderer.data.ProjectInfoVO;
-import com.uwsoft.editor.renderer.data.ResolutionEntryVO;
-import com.uwsoft.editor.renderer.data.SceneVO;
-import com.uwsoft.editor.renderer.utils.MySkin;
-import com.uwsoft.editor.utils.Overlap2DUtils;
 
 
 public class ProjectManager extends BaseProxy {
@@ -1050,5 +1049,38 @@ public class ProjectManager extends BaseProxy {
         currentProjectVO.sceneConfigs.add(newConfig);
 
         return newConfig;
+    }
+
+    public void importShaderIntoProject(Array<FileHandle> files, ProgressHandler progressHandler) {
+        if (files == null) {
+            return;
+        }
+        handler = progressHandler;
+        currentPercent = 0;
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            for (FileHandle handle : files) {
+                // check if shaders folder exists
+                String shadersPath = currentWorkingPath + "/" + currentProjectVO.projectName + "/assets/shaders";
+                File destination = new File(currentWorkingPath + "/" + currentProjectVO.projectName + "/assets/shaders/"+handle.name());
+                try {
+                    FileUtils.forceMkdir(new File(shadersPath));
+                    FileUtils.copyFile(handle.file(), destination);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+        executor.execute(() -> {
+            changePercentBy(100 - currentPercent);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            handler.progressComplete();
+        });
+        executor.shutdown();
     }
 }

@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 /**
  * Created by azakhary on 4/26/2015.
@@ -49,8 +51,8 @@ public class ResourceManager extends BaseProxy implements IResourceRetriever {
     private HashMap<String, SpineAnimData> spineAnimAtlases = new HashMap<String, SpineAnimData>();
     private HashMap<String, TextureAtlas> spriteAnimAtlases = new HashMap<String, TextureAtlas>();
     private HashMap<String, FileHandle> spriterAnimFiles = new HashMap<String, FileHandle>();
-
     private HashMap<FontSizePair, BitmapFont> bitmapFonts = new HashMap<>();
+    private HashMap<String, ShaderProgram> shaderPrograms = new HashMap<String, ShaderProgram>(1);
 
     private ResolutionManager resolutionManager;
 
@@ -70,6 +72,10 @@ public class ResourceManager extends BaseProxy implements IResourceRetriever {
         TextureRegion reg = currentProjectAtlas.findRegion(name);
 
         return reg;
+    }
+
+    public TextureAtlas getTextureAtlas() {
+        return currentProjectAtlas;
     }
 
     @Override
@@ -154,6 +160,7 @@ public class ResourceManager extends BaseProxy implements IResourceRetriever {
         loadCurrentProjectSpriteAnimations(currentWorkingPath + "/" + projectName + "/assets/", curResolution);
         loadCurrentProjectSpriterAnimations(currentWorkingPath + "/" + projectName + "/assets/", curResolution);
         loadCurrentProjectBitmapFonts(currentWorkingPath + "/" + projectName, curResolution);
+        loadCurrentProjectShaders(currentWorkingPath + "/" + projectName + "/assets/shaders/");
     }
 
     private void loadCurrentProjectParticles(String path) {
@@ -260,6 +267,29 @@ public class ResourceManager extends BaseProxy implements IResourceRetriever {
                 e.printStackTrace();
             }
         }
+    }
+    
+    private void loadCurrentProjectShaders(String path) {
+    	Iterator<Entry<String, ShaderProgram>> it = shaderPrograms.entrySet().iterator();
+    	while (it.hasNext()) {
+    		Entry<String, ShaderProgram> pair = it.next();
+    		pair.getValue().dispose();
+    		it.remove(); 
+    	}
+        shaderPrograms.clear();
+        FileHandle sourceDir = new FileHandle(path);
+        for (FileHandle entry : sourceDir.list()) {
+            File file = entry.file();
+            String filename = file.getName().replace(".vert", "").replace(".frag", "");
+            if (file.isDirectory() || filename.endsWith(".DS_Store") || shaderPrograms.containsKey(filename)) continue;
+            // check if pair exists.
+            if(Gdx.files.internal(path + filename + ".vert").exists() && Gdx.files.internal(path + filename + ".frag").exists()) {
+                ShaderProgram shaderProgram = new ShaderProgram(Gdx.files.internal(path + filename + ".vert"), Gdx.files.internal(path + filename + ".frag"));
+                System.out.println(shaderProgram.getLog());
+                shaderPrograms.put(filename, shaderProgram);
+            }
+        }
+
     }
 
     /**
@@ -368,8 +398,13 @@ public class ResourceManager extends BaseProxy implements IResourceRetriever {
         return getProjectVO().getResolution(packResolutionName);
     }
 
-    @Override
-    public ShaderProgram getShaderProgram(String shaderName) {
-        return null;
+	@Override
+	public ShaderProgram getShaderProgram(String shaderName) {
+		// TODO Auto-generated method stub
+		return shaderPrograms.get(shaderName);
+	}
+
+    public HashMap<String, ShaderProgram> getShaders() {
+        return shaderPrograms;
     }
 }
